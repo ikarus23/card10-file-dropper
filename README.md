@@ -11,6 +11,14 @@ Some users actually found the file and Tweeted about it ([1](https://twitter.com
 
 
 
+Requirements
+------------
+
+* python3
+* bluepy (https://github.com/IanHarvey/bluepy)
+
+
+
 Usage
 -----
 
